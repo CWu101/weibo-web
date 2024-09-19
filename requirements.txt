@@ -3,4 +3,4 @@ requests==2.31.0
 lxml==4.9.3
 jieba==0.42.1
 matplotlib==3.7.1
-wordcloud==1.8.2.2
+wordcloud==1.9.3
