@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微博热搜爬虫</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>微博热搜爬虫</h1>
+        <button id="scrapeButton">一键爬虫</button>
+        <div id="wordcloud" class="wordcloud"></div>
+        <div id="results" class="results"></div>
+    </div>
+
+<script>
+    document.getElementById('scrapeButton').addEventListener('click', async () => {
+    const button = document.getElementById('scrapeButton');
+    button.textContent = '正在爬取...';
+    button.disabled = true;
+
+    try {
+        const response = await fetch('/scrape', { method: 'POST' });
+        const contentType = response.headers.get('Content-Type');
+
+        if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+
+            const resultsDiv = document.getElementById('results');
+            const wordcloudDiv = document.getElementById('wordcloud');
+
+            // 先检查 data.topics 是否存在且为数组
+            if (Array.isArray(data.topics)) {
+                resultsDiv.innerHTML = '<h2>热搜列表</h2><ul>' + data.topics.map((topic, index) => `
+                    <li>
+                        <span class="index">${index + 1}</span>
+                        <a href="${topic.link}" target="_blank">${topic.name}</a>
+                        <span class="hot">${topic.hot}</span>
+                    </li>
+                `).join('') + '</ul>';
+            } else {
+                resultsDiv.innerHTML = '<h2>数据格式错误</h2><pre>' + JSON.stringify(data) + '</pre>';
+            }
+
+            if (data.wordcloud) {
+                wordcloudDiv.innerHTML = '<h2>词云图</h2><img src="data:image/png;base64,' + data.wordcloud + '" />';
+            } else {
+                wordcloudDiv.innerHTML = '<h2>词云图</h2><p>词云图数据缺失</p>';
+            }
+        } else {
+            const text = await response.text();
+            document.getElementById('results').innerHTML = `<h2>服务器返回了非 JSON 数据</h2><pre>${text}</pre>`;
+            document.getElementById('wordcloud').innerHTML = '';
+        }
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        document.getElementById('results').innerHTML = `<h2>请求失败</h2><pre>${error}</pre>`;
+        document.getElementById('wordcloud').innerHTML = '';
+    } finally {
+        button.textContent = '一键爬虫';
+        button.disabled = false;
+    }
+});
+
+</script>
+</body>
+</html>
